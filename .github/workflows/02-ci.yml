@@ -9,10 +9,11 @@ on:
       - "app/**"
       - "tests/**"
       - ".github/workflows/02-ci.yml"
+      
   # Allow a safe manual run before students trigger it with a code change.
-
   schedule:
     - cron: '0 10 * * *' 
+    
   workflow_dispatch:
     inputs:
       date:
@@ -20,8 +21,10 @@ on:
         required: true
         type: string
         default: 'in 1 hour'
-        
-  # workflow_dispatch:
+
+# Global environment variables (accessible by all jobs and steps)
+env:
+  PYTHON_VERSION: "3.12"
 
 jobs:
   run-tests:
@@ -37,16 +40,19 @@ jobs:
         run: ls 
 
       - name: Set up Python
-        # Prepare Python on the runner. This does not change the student laptop.
+        # Prepare Python on the runner using the global env variable.
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: python validation 
         run: python --version
 
       - name: Print current time
         run: date
+
+      - name: Log the environment variable
+        run: echo "python version is  $PYTHON_VERSION"
 
       - name: Run tests
         # This is the key verification step in the CI workflow.
