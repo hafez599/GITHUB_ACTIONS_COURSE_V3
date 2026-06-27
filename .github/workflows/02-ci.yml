@@ -28,6 +28,9 @@ env:
 
 jobs:
   run-tests:
+    strategy:
+      matrix:
+        version: [3.11, 3.12]
     # The runner is the temporary machine that executes the steps below.
     runs-on: ubuntu-latest
 
