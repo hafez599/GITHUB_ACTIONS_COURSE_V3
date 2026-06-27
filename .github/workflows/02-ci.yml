@@ -62,6 +62,16 @@ jobs:
         with:
           python-version: ${{ matrix.version }}
 
+      
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff linter
+        run: ruff check . --output-format=github
+
+      - name: Run Ruff formatter check
+        run: ruff format . --check
+
       - name: Validate Python is installed
         run: python --version
 
