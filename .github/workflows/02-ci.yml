@@ -24,7 +24,7 @@ on:
 
 # Global environment variables (accessible by all jobs and steps)
 env:
-  PYTHON_VERSION: "3.12"
+  PYTHON_VERSION: ${{ secrets.PYTHON_VERSION }}
 
 jobs:
   run-tests:
