@@ -11,7 +11,7 @@ on:
   pull_request:
     branches:
       - main
-    types: [opened, synchronize, reopened]
+    types: [closed]
   # Allow a safe manual run from the Actions tab too.
   workflow_dispatch:
 
@@ -19,7 +19,8 @@ jobs:
   say-hello:
     # GitHub provides a fresh runner for the job.
     runs-on: ubuntu-latest
-
+    if: github.event.pull_request.merged == true
+    
     steps:
       - name: Say hello
         # This single step is enough to show a full workflow run.
