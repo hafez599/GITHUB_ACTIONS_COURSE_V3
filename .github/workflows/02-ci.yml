@@ -23,16 +23,17 @@ on:
         default: 'in 1 hour'
 
 # Global environment variables (accessible by all jobs and steps)
-env:
-  PYTHON_VERSION: ${{ secrets.PYTHON_VERSION }}
+# env:
+#   PYTHON_VERSION: ${{ secrets.PYTHON_VERSION }}
 
 jobs:
   run-tests:
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest]
         version: [3.11, 3.12]
     # The runner is the temporary machine that executes the steps below.
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Check out repository
