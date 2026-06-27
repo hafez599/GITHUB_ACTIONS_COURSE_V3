@@ -65,6 +65,13 @@ jobs:
       - name: Validate Python is installed
         run: python --version
 
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff linter
+        run: ruff check . 
+
+
       - name: Run tests
         # This is the key verification step in the CI workflow.
         run: python -m unittest discover -s tests -v
