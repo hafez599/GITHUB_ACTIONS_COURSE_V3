@@ -13,9 +13,9 @@ jobs:
   run-tests:
     runs-on: ${{ matrix.os }}
     strategy:
-        matrix:
-          os: [ubuntu-latest]
-          version: ["3.11" , "3.12"]
+      matrix:
+        os: [ubuntu-latest]
+        version: ["3.11", "3.12"]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -44,53 +44,54 @@ jobs:
       - name: Run tests
         run: python -m unittest discover -s tests -v
 
+  build-and-push:
+    needs: run-tests        
+    runs-on: ubuntu-latest 
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
 
       - name: Build an image from Dockerfile
-        run: docker build -t docker.io/hafez599/my-app:${{ github.sha }} .
+        run: docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} .
 
-      # Save Docker image to a tar file and upload as artifact
       - name: Save Docker image as tar
-        run: docker save docker.io/hafez599/my-app:${{ github.sha }} -o my-app.tar
+        run: docker save ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} -o my-app.tar
 
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: docker-image-${{ matrix.version }}
+          name: docker-image
           path: my-app.tar
           retention-days: 7
 
-      - name: Run Trivy vulnerability scanner on image
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: 'docker.io/hafez599/my-app:${{ github.sha }}'
-          format: 'json'                        
-          output: 'trivy-image-report.json'    
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+      # - name: Run Trivy vulnerability scanner on image
+      #   uses: aquasecurity/trivy-action@v0.36.0
+      #   with:
+      #     image-ref: '${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}'
+      #     format: 'json'
+      #     output: 'trivy-image-report.json'
+      #     exit-code: '1'
+      #     ignore-unfixed: true
+      #     vuln-type: 'os,library'
+      #     severity: 'CRITICAL,HIGH'
 
-      # Upload Trivy scan report as artifact
-      - name: Upload Trivy scan report artifact
-        if: always()     
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-report-${{ matrix.version }}
-          path: trivy-image-report.json
-          retention-days: 7
-      # push the image to ECR
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+      # - name: Upload Trivy scan report artifact
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: trivy-report
+      #     path: trivy-image-report.json
+      #     retention-days: 7
 
-      - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Push image to ECR
-        run: |
-          docker tag docker.io/hafez599/my-app:${{ github.sha }} \
-            ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
-          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+      # - name: Log in to Amazon ECR
+      #   uses: aws-actions/amazon-ecr-login@v2
+
+      # - name: Push image to ECR
+      #   run: docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
