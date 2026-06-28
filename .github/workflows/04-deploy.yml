@@ -30,14 +30,14 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Pull image from ECR
-        run: docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+        run: docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
 
       - name: Start container
         run: |
           docker run -d \
             --name "${{ env.CONTAINER_NAME }}" \
             -p "${{ env.APP_PORT }}:8000" \
-            ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
 
       - name: Smoke test deployed app
         run: |
