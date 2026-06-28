@@ -2,13 +2,18 @@
 # It starts after the build workflow finishes successfully.
 name: 04 Deploy Workflow
 
+# on:
+#   workflow_run:
+#     # Listen for the build workflow by name.
+#     workflows: ["03 Build Artifact Workflow"]
+#     # Start when the build workflow has completed.
+#     types: [completed]
 on:
-  workflow_run:
-    # Listen for the build workflow by name.
-    workflows: ["03 Build Artifact Workflow"]
-    # Start when the build workflow has completed.
-    types: [completed]
-
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
 env:
   IMAGE_NAME: tiny-health-app
   IMAGE_TAR: tiny-health-app.tar
@@ -25,7 +30,8 @@ permissions:
 jobs:
   deploy-package:
     # Continue only when the build workflow succeeded.
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: github.event.pull_request.merged == true
     # Use a fresh runner for the deployment simulation.
     runs-on: ubuntu-latest
 
@@ -37,7 +43,7 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: tiny-health-app-image
           path: downloaded-artifact
 
       - name: Show downloaded files
