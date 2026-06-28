@@ -1,16 +1,5 @@
-# This is the first real CI workflow in the course.
-# It verifies a change by running tests on a fresh runner.
 name: 02 CI Workflow
-
-
 on:
-  # Run automatically when app code, tests, or this workflow file changes.
-  # push:
-  #   paths:
-  #     - "app/**"
-  #     - "tests/**"
-  #     - ".github/workflows/02-ci.yml"
-
   pull_request:
     branches:
       - main
@@ -18,32 +7,18 @@ on:
       - opened
       - reopened
       - synchronize
-
-
-  # schedule:
-  #   # Runs at 00:00 UTC every day
-  #   - cron: '0 10 * * *'
-  # Allow a safe manual run before students trigger it with a code change.
   workflow_dispatch:
-  
-# env:
-#   PYTHON_VERSION: ${{ secrets.PYTHON_VERSION }}
+
 jobs:
   run-tests:
-    # The runner is the temporary machine that executes the steps below.
     runs-on: ${{ matrix.os }}
     strategy:
         matrix:
           os: [ubuntu-latest]
           version: ["3.11" , "3.12"]
-
     steps:
       - name: Check out repository
-        # Download the repository contents onto the runner.
-        uses: actions/checkout@v6
-
-      - name: Validate checkout
-        run: ls -a
+        uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner in fs mode
         uses: aquasecurity/trivy-action@v0.36.0
@@ -54,43 +29,52 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
-          # trivy-config: trivy.yaml
-    
+
       - name: Set up Python
-        # Prepare Python on the runner. This does not change the student laptop.
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.version }}
-
-      - name: Validate Python is installed
-        run: python --version
 
       - name: Install Ruff
         run: pip install ruff
 
       - name: Run Ruff linter
-        run: ruff check . 
-
+        run: ruff check . --output-format=github
 
       - name: Run tests
-        # This is the key verification step in the CI workflow.
         run: python -m unittest discover -s tests -v
 
-      - name: Get current time
-        run: echo "NOW=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
-        # NOW = "2026-06-27 10:00:00"
-
-      - name: Print current time
-        run: echo "The current time is ${{ env.NOW }}"
 
       - name: Build an image from Dockerfile
-        run: docker build -t docker.io/ahmedyasser02/my-app:${{ github.sha }} .
-      - name: Run Trivy vulnerability scanner
+        run: docker build -t docker.io/hafez599/my-app:${{ github.sha }} .
+
+      # Save Docker image to a tar file and upload as artifact
+      - name: Save Docker image as tar
+        run: docker save docker.io/hafez599/my-app:${{ github.sha }} -o my-app.tar
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{ matrix.version }}
+          path: my-app.tar
+          retention-days: 7
+
+      - name: Run Trivy vulnerability scanner on image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: 'docker.io/ahmedyasser02/my-app:${{ github.sha }}'
-          format: 'table'
+          image-ref: 'docker.io/hafez599/my-app:${{ github.sha }}'
+          format: 'json'                        
+          output: 'trivy-image-report.json'    
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+
+      # Upload Trivy scan report as artifact
+      - name: Upload Trivy scan report artifact
+        if: always()     
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report-${{ matrix.version }}
+          path: trivy-image-report.json
+          retention-days: 7
