@@ -93,4 +93,4 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Push image to ECR
-        run: docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+        run: docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
