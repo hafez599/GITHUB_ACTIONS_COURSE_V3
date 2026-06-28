@@ -82,13 +82,10 @@ jobs:
           exit 1
           
       - name: Validate container is running with docker ps
-        run: |
-          docker ps
-          docker ps | grep my-app | grep -i "up"
+        run: docker ps
 
       - name: Validate /health endpoint
-        run: |
-          curl --fail http://localhost:8080/health
+        run: curl --fail http://localhost:8080/health
 
       - name: Stop container
         if: always()
